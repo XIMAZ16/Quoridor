@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>QUORIDOR - เกมกำแพง 9×9 (Retro Arcade)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div class="scanlines"></div>
+
+<div class="game-container">
+  <header class="arcade-header">
+    <h1 class="title-badge"><span class="accent-x">QUORI</span><span class="accent-o">DOR</span></h1>
+    <p class="subtitle">เกมวางกำแพง 9×9 ใครถึงเส้นชัยก่อนชนะ</p>
+  </header>
+
+  <nav class="controls-bar" aria-label="Game Controls">
+    <div class="button-group" role="group" aria-label="โหมดเกม">
+      <button class="mode-btn active" data-mode="bot" id="mode-bot"><span>🤖</span> สู้กับบอท</button>
+      <button class="mode-btn" data-mode="pvp" id="mode-pvp"><span>👥</span> สู้กับเพื่อน (2P)</button>
+      <button class="mode-btn" data-mode="online" id="mode-online"><span>🌐</span> ออนไลน์ 1v1</button>
+    </div>
+    <div class="button-group" id="difficulty-container" role="group" aria-label="ระดับความยากบอท">
+      <button class="diff-btn" data-diff="easy">ง่าย</button>
+      <button class="diff-btn active" data-diff="medium">ปานกลาง</button>
+      <button class="diff-btn" data-diff="hard">ยาก</button>
+    </div>
+    <div class="button-group">
+      <button class="icon-btn" id="mute-btn" title="เปิด/ปิดเสียง" aria-label="เปิด/ปิดเสียง">🔊</button>
+      <button class="icon-btn" id="open-rules-btn" title="กติกาการเล่น" aria-label="กติกาการเล่น">❓ กติกา</button>
+      <button class="icon-btn" id="restart-btn" title="เริ่มเกมใหม่" aria-label="เริ่มเกมใหม่">🔄 รีเซ็ต</button>
+    </div>
+  </nav>
+
+  <section class="scoreboard" aria-label="ตารางคะแนน">
+    <div class="score-box score-x">
+      <span class="score-label" id="label-x">ผู้เล่น X</span>
+      <span class="score-val" id="score-x">0</span>
+      <span class="score-walls" id="walls-x">🧱 10</span>
+    </div>
+    <div class="score-box score-tie">
+      <span class="score-label">ตาที่</span>
+      <span class="score-val" id="move-count">1</span>
+    </div>
+    <div class="score-box score-o">
+      <span class="score-label" id="label-o">บอท (O)</span>
+      <span class="score-val" id="score-o">0</span>
+      <span class="score-walls" id="walls-o">🧱 10</span>
+    </div>
+  </section>
+
+  <section class="online-bar hidden" id="online-bar" aria-label="ข้อมูลห้องออนไลน์">
+    <div class="online-info">
+      <span class="online-room-code" id="online-room-code">------</span>
+      <span class="online-role" id="online-role">เจ้าของห้อง (X)</span>
+    </div>
+    <span class="online-status is-waiting" id="online-status">รอคู่แข่ง...</span>
+    <button class="icon-btn online-icon-btn" id="copy-link-btn" title="คัดลอกลิงก์เชิญเพื่อน" aria-label="คัดลอกลิงก์เชิญเพื่อน">🔗</button>
+    <button class="icon-btn online-icon-btn" id="leave-room-btn" title="ออกจากห้อง" aria-label="ออกจากห้อง">🚪</button>
+  </section>
+
+  <section class="bot-chat-section" id="bot-chat-section" aria-label="บทสนทนาของบอท">
+    <div class="bot-avatar-wrapper">
+      <div class="bot-avatar" id="bot-avatar">🤖</div>
+      <div class="bot-status-tag" id="bot-status-tag">PRO CPU</div>
+    </div>
+    <div class="bot-speech-bubble" id="bot-speech-bubble">
+      <div class="speech-arrow"></div>
+      <p class="speech-text" id="speech-text">พร้อมจะดวล Quoridor รึยังเพื่อน? ลุยเลย!</p>
+    </div>
+    <button class="chat-toggle-btn" id="chat-toggle-btn" title="เปิด/ปิดคำพูดบอท" aria-label="เปิด/ปิดคำพูดบอท">💬</button>
+  </section>
+
+  <section class="status-panel" aria-live="polite">
+    <div class="turn-indicator" id="turn-indicator">
+      <span class="player-badge badge-x" id="turn-player-mark">X</span>
+      <span id="turn-text">ตาของคุณ (X)</span>
+    </div>
+    <div class="button-group" id="action-group" role="group" aria-label="เลือกการกระทำ">
+      <button class="act-btn active" data-act="move" id="act-move">🚶 เดินหมาก</button>
+      <button class="act-btn" data-act="wall" id="act-wall">🧱 วางกำแพง</button>
+    </div>
+    <div class="board-hint" id="board-hint"></div>
+  </section>
+
+  <main class="board-wrapper">
+    <div class="qboard" id="qboard" role="grid" aria-label="กระดาน Quoridor"></div>
+  </main>
+</div>
+
+<!-- Online Lobby -->
+<div class="modal-backdrop hidden" id="lobby-modal" role="dialog" aria-modal="true">
+  <div class="modal-box lobby-box">
+    <button class="modal-close-icon" id="lobby-close-btn" aria-label="ปิดหน้าต่าง">&times;</button>
+    <h2>เล่นออนไลน์ 1v1</h2>
+    <p class="lobby-sub">สร้างห้องแล้วส่งรหัสหรือลิงก์ให้เพื่อน หรือใส่รหัสที่ได้รับเพื่อเข้าห้อง</p>
+    <button class="modal-btn" id="lobby-create-btn">🎮 สร้างห้องใหม่</button>
+    <div class="lobby-code-box hidden" id="lobby-code-box">
+      <span class="lobby-code" id="lobby-code-display">------</span>
+      <button class="icon-btn" id="lobby-copy-btn">🔗 คัดลอกลิงก์</button>
+    </div>
+    <div class="lobby-divider"><span>หรือ</span></div>
+    <div class="lobby-join-row">
+      <input class="lobby-input" id="lobby-code-input" type="text" maxlength="6" placeholder="รหัสห้อง 6 ตัว" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="รหัสห้อง">
+      <button class="modal-btn lobby-join-btn" id="lobby-join-btn">เข้าร่วม</button>
+    </div>
+    <p class="lobby-status" id="lobby-status"></p>
+    <p class="lobby-transport" id="lobby-transport"></p>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="modal-backdrop hidden" id="result-modal" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon" id="modal-icon">🏆</div>
+    <h2 class="modal-title" id="modal-title">VICTORY!</h2>
+    <p class="modal-subtitle" id="modal-subtitle"></p>
+    <button class="modal-btn" id="play-again-btn">เล่นใหม่อีกครั้ง 🕹️</button>
+  </div>
+</div>
+
+<!-- Rules -->
+<div class="modal-backdrop hidden" id="rules-modal" role="dialog" aria-modal="true">
+  <div class="modal-box rules-box">
+    <button class="modal-close-icon" id="close-rules-btn" aria-label="ปิดหน้าต่าง">&times;</button>
+    <h2>กติกา QUORIDOR</h2>
+    <div class="rules-content">
+      <div class="rule-item">
+        <strong>1. เป้าหมาย</strong>
+        พาหมากของคุณไปให้ถึงแถวสุดท้ายฝั่งตรงข้ามก่อนอีกฝ่าย ผู้เล่น X (สีฟ้า) เริ่มที่แถวล่างและเดินขึ้นไปแถวบนสุด ส่วนผู้เล่น O (สีชมพู) เริ่มที่แถวบนและเดินลงไปแถวล่างสุด
+      </div>
+      <div class="rule-item">
+        <strong>2. หนึ่งตา ทำได้อย่างเดียว</strong>
+        เลือกอย่างใดอย่างหนึ่งในแต่ละตา: <strong style="display:inline">เดินหมาก 1 ช่อง</strong> (บน ล่าง ซ้าย หรือขวา) หรือ <strong style="display:inline">วางกำแพง 1 อัน</strong>
+      </div>
+      <div class="rule-item">
+        <strong>3. กำแพง</strong>
+        กำแพงยาว 2 ช่อง วางในร่องระหว่างช่องเพื่อกั้นทางเดิน ผู้เล่นแต่ละคนมี 10 อัน วางทับกันหรือวางไขว้กันไม่ได้ กำแพงวางแล้วเอาออกไม่ได้
+      </div>
+      <div class="rule-item rule-highlight">
+        <strong>4. ห้ามปิดทางตาย</strong>
+        ห้ามวางกำแพงจนอีกฝ่ายไม่เหลือทางเดินไปถึงเส้นชัยเลย (ของตัวเองก็เช่นกัน) ถ้าวางแล้วปิดทางสนิท เกมจะไม่ให้วาง
+      </div>
+      <div class="rule-item">
+        <strong>5. การกระโดดข้ามหมาก</strong>
+        ถ้าหมากอีกฝ่ายอยู่ติดกัน ให้กระโดดข้ามไปช่องด้านหลังได้ แต่ถ้ามีกำแพงหรือขอบกระดานกั้นอยู่ด้านหลัง ให้เดินเฉียงไปด้านข้างของหมากนั้นแทน
+      </div>
+      <div class="rule-item">
+        <strong>6. วิธีบังคับ</strong>
+        กด <strong style="display:inline">🚶 เดินหมาก</strong> แล้วแตะช่องที่เรืองแสงสีเหลือง หรือกด <strong style="display:inline">🧱 วางกำแพง</strong> แล้วแตะร่องระหว่างช่อง บนมือถือแตะครั้งแรกเพื่อดูตัวอย่าง แตะซ้ำที่เดิมเพื่อยืนยัน
+      </div>
+    </div>
+    <button class="modal-btn" style="margin-top: 12px; width: 100%;" id="rules-ok-btn">เข้าใจแล้ว ลุยเลย! 🚀</button>
+  </div>
+</div>
+
+<script src="net-config.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+<script src="ai.js"></script>
+<script src="net.js"></script>
+</body>
+</html>
